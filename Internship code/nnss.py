@@ -79,9 +79,6 @@ def optimize_ss_neural_sdf(net, optim,
         
         for b in batch:
             pc,nc,_ = load_mesh(dataset[b])
-            # pc, nc = from_ply(dataset[b])
-            # pc, nc = torch.tensor(pc, device=device).float(), torch.tensor(nc, device=device).float()
-            # pc.requires_grad = True
             meshes_pc.append(pc)
             meshes_nc.append(nc)
             
@@ -117,10 +114,6 @@ def optimize_ss_neural_sdf(net, optim,
                 sdf_random = net(torch.concat((pts_random, zb.repeat((batch_size,1))), dim=1))
                 sdf_pc = net(torch.concat((pc, zb.repeat((pc.shape[0],1))), dim=1))
                 sdf_hint = net(torch.concat((pts_hint, zb.repeat((num_hints,1))), dim=1))
-                
-                # sdf_random = net(torch.concat((pts_random, torch.zeros((batch_size,32), device=device)), dim=1))
-                # sdf_pc = net(torch.concat((pc, torch.zeros((2000,32), device=device)), dim=1))
-                # sdf_hint = net(torch.concat((pts_hint, torch.zeros((2000,32), device=device)), dim=1))
                 
                 grad_random = gradient(sdf_random, pts_random)
                 loss_random += sdf_loss_others(sdf_random, grad_random)
@@ -209,42 +202,32 @@ def optimize_latent(net, pc, nc, batch_size, pc_batch_size, epochs, num_hints):
         
     return latent
 
-s = "../Datasets/data/pointclouds/03467517/"
-s = "Objects/"
-# dirs = [s+dr for dr in os.listdir(s) if os.path.isdir(s+dr)]
-# files = [[dr+"/"+f for f in os.listdir(dr)] for dr in dirs]
-# dataset = []
-# for f in files:
-#     dataset += f
-# dataset = [s+dr for dr in os.listdir(s)]
-# dataset = random.choices(dataset, k=10)
 
-# dataset = [s+"1ae3b398cea3823b49c212147ab9c105.ply", s+"3c125ee606b03cd263ae8c3a62777578.ply"]
+s = "Objects/"
 names = ["spot",   "bimba",  "bunny", "bitore",    "hand2",
          "helice", "dragon", "dino",  "pillowbox", "hand",
          "pipe", "protein"]
 dataset = [s+n+".obj" for n in names]
 
-# net = ShapeSpaceNet(dim_in=3, dim_hidden=128, dim_out=1, num_layers=8,
-#                     num_shapes=10, dim_latent=128).to(device)
+net = ShapeSpaceNet(dim_in=3, dim_hidden=128, dim_out=1, num_layers=8,
+                    num_shapes=10, dim_latent=128).to(device)
 
-# optim = torch.optim.Adam(lr=2e-5, params=net.parameters())
+optim = torch.optim.Adam(lr=2e-5, params=net.parameters())
 
-# try:
-#     optimize_ss_neural_sdf(net, optim, dataset,
-#                         dataset_batch_size=10, dataset_epochs=1,
-#                         batch_size=10000, epochs=2000,
-#                         num_hints=5000, batch_pc_maxsize=10000)
-# except KeyboardInterrupt:
-#     pass
+try:
+    optimize_ss_neural_sdf(net, optim, dataset,
+                        dataset_batch_size=10, dataset_epochs=1,
+                        batch_size=10000, epochs=2000,
+                        num_hints=5000, batch_pc_maxsize=10000)
+except KeyboardInterrupt:
+    pass
 
-# torch.save(net, "Shape Space Networks/ssnn_all10_lat128.net")
+torch.save(net, "Shape Space Networks/ssnn_all10_lat128.net")
 
-net = torch.load("Shape Space Networks/ssnn_all12_lat128_hidden128_TV.net")
 
-# for i,z in enumerate(np.linspace(0,1,1)):
-#     for k in range(len(dataset)):
-#         display_sdfColor(lambda x:net(torch.concat((x, torch.zeros((x.shape[0],1), device=device)+z, net.latent[k,:].repeat((x.shape[0],1))), dim=1)), 250)
+# =============================================================================
+# sphere-tracing
+# =============================================================================
 
 for k in range(len(dataset)):
     f = lambda x:net(torch.concat((x,net.latent[k,:].repeat((x.shape[0],1))), dim=1))
@@ -253,36 +236,29 @@ for k in range(len(dataset)):
     plt.axis('off')
     plt.imshow(np.rot90(img))
 
-# pca = PCA(n_components=2)
-# pca2 = pca.fit_transform(net.latent.cpu().detach())
-# plt.plot(pca2[:,0], pca2[:,1], '.')
-# for i in range(len(dataset)):
-#     plt.text(pca2[i,0], pca2[i,1], names[i])
-# plt.show()
 
-# for t in np.linspace(0,1,10):
-#     code = t * net.latent[0,:] + (1-t) * net.latent[7,:]
-#     display_sdfColor(lambda x:net(torch.concat((x, torch.zeros((x.shape[0],1), device=device), code.repeat((x.shape[0],1))), dim=1)), 250)
-#     display_grad(lambda x:net(torch.concat((x, code.repeat((x.shape[0],1))), dim=1)), 250, 0, 'z')
+# =============================================================================
+# interpolation
+# =============================================================================
 
-# for t in np.linspace(0,1,10):
-#     code = t * net.latent[4,:] + (1-t) * net.latent[7,:]
-#     f = lambda x:net(torch.concat((x,code.repeat((x.shape[0],1))), dim=1))
-#     img = sphere_tracing_gpu(f, 200, 0*np.pi/6, 0*np.pi/6, 1., 3., 1., .02, np.array([.6,.8,.3]))
-#     plt.figure(figsize=(10,10))
-#     plt.axis('off')
-#     plt.imshow(np.rot90(img))
+for t in np.linspace(0,1,10):
+    code = t * net.latent[4,:] + (1-t) * net.latent[7,:]
+    f = lambda x:net(torch.concat((x,code.repeat((x.shape[0],1))), dim=1))
+    img = sphere_tracing_gpu(f, 200, 0*np.pi/6, 0*np.pi/6, 1., 3., 1., .02, np.array([.6,.8,.3]))
+    plt.figure(figsize=(10,10))
+    plt.axis('off')
+    plt.imshow(np.rot90(img))
+    
+# =============================================================================
+# inference
+# =============================================================================
 
-# pc,nc,_ = load_mesh(dataset[7])
-# pc = -pc
-# nc = -nc
-# latent = optimize_latent(net, pc, nc, 10000, 10000, 500, 5000)
-# latent = torch.rand((128), device=device)
-# latent = nn.functional.normalize(latent, dim=0)*0.
-# latent = latent[None,:]
-# latent = net.latent[2,:]+0.1*nn.functional.normalize(torch.rand((128), device=device), dim=0)
-# f = lambda x:net(torch.concat((x,latent.repeat((x.shape[0],1))), dim=1))
-# img = sphere_tracing_gpu(f, 200, 0*np.pi/6, 0*np.pi/6, 1., 3., 1., .02, np.array([.6,.8,.3]))
-# plt.figure(figsize=(10,10))
-# plt.axis('off')
-# plt.imshow(np.rot90(img))
+pc,nc,_ = load_mesh(dataset[7])
+pc = -pc
+nc = -nc
+latent = optimize_latent(net, pc, nc, 10000, 10000, 500, 5000)
+f = lambda x:net(torch.concat((x,latent.repeat((x.shape[0],1))), dim=1))
+img = sphere_tracing_gpu(f, 200, 0*np.pi/6, 0*np.pi/6, 1., 3., 1., .02, np.array([.6,.8,.3]))
+plt.figure(figsize=(10,10))
+plt.axis('off')
+plt.imshow(np.rot90(img))

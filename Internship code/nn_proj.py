@@ -6,7 +6,7 @@ from torch import nn
 from matplotlib import pyplot as plt
 from scipy.spatial import KDTree
 
-from nn import SirenNet, Relu
+from nn import SirenNet
 from geometry import sample_mesh, to_obj
 from tools import gradient
 from display import display_sdfColor, display_angle
@@ -155,8 +155,7 @@ def pretrain(dim_hidden, num_layers, skip, lr, batch_size, epochs):
         num_layers = num_layers,
         skip = skip,
         w0_initial = 30.,
-        w0 = 30.,
-        activation = Relu()
+        w0 = 30.
         ).to(device)
     
     optim = torch.optim.Adam(lr=lr, params=net.parameters())
@@ -205,59 +204,42 @@ s = "helice"
 mode = 'surface4'
 pc, nc = sample_mesh("Objects/{}.obj".format(s), 100000)
 
-# net = pretrain(128, 8, [], 2e-5, 50000, 4000)
-# torch.save(net, "Pretrained/pretrainedproj_{}_{}".format(128, 8))
+net = pretrain(128, 8, [], 2e-5, 50000, 4000)
+torch.save(net, "Pretrained/pretrainedproj_{}_{}".format(128, 8))
 
-# net = torch.load("Pretrained/pretrainedproj_{}_{}".format(128, 8))
+net = torch.load("Pretrained/pretrainedproj_{}_{}".format(128, 8))
 
-# optim = torch.optim.Adam(lr=2e-5, params=net.parameters())
+optim = torch.optim.Adam(lr=2e-5, params=net.parameters())
 
-# try:
-#     optimize_neural_proj(net, optim, pc, nc,
-#                           batch_size=25000, pc_batch_size=25000,
-#                           epochs=2000, nb_hints=10000,
-#                           mode=mode)
-# except KeyboardInterrupt:
-#     pass
+try:
+    optimize_neural_proj(net, optim, pc, nc,
+                          batch_size=25000, pc_batch_size=25000,
+                          epochs=2000, nb_hints=10000,
+                          mode=mode)
+except KeyboardInterrupt:
+    pass
 
-# torch.save(net, "Networks/netproj{}_{}.net".format(mode, s))
-
+torch.save(net, "Networks/netproj{}_{}.net".format(mode, s))
 net = torch.load("Networks/netproj{}_{}.net".format(mode, s))
-pc = torch.rand((10000, 3), device = device)*2-1
-pts_random = net(pc)[:,:3].detach().cpu().numpy()
-to_obj(pts_random, "D:/proj__{}.obj".format(s))
 
-for z in np.linspace(.1, -.4, 1):
+p = torch.rand((10000, 3), device = device)*2-1
+p = net(p)[:,:3].detach().cpu().numpy()
+to_obj(p, "Projections/proj_{}.obj".format(s))
+
+plt.figure(figsize = (40, 40))
+ax = plt.axes(projection ="3d")
+ax.scatter3D(p[:,0], p[:,1], p[:,2])
+plt.show()
+
+for z in np.linspace(-1, 1, 10):
     f = lambda x:torch.concat((x[:,:1],torch.zeros((x.shape[0],1), device=device)+z,x[:,1:]), dim=1)
     g = lambda x:net(f(x))[:,:3]-f(x)
-    h = lambda x:torch.linalg.norm(g(x), dim=1)
     k = lambda x:torch.atan2(g(x)[:,0], g(x)[:,2])
     plt.figure()
-    display_sdfColor(h, 500)
+    display_sdfColor(lambda x:torch.linalg.norm(net(x)[:,:3]-x, dim=1), 500, z, 'y')
     if mode=="surface4":
-        l = lambda x:net(f(x))[:,3]
+        l = lambda x:net(x)[:,3]
         plt.figure()
-        display_sdfColor(l, 500)
+        display_sdfColor(l, 500, z, 'y')
     plt.figure()
     display_angle(k, 500)
-    
-
-# plt.figure(figsize = (40, 40))
-# ax = plt.axes(projection ="3d")
-# ax.scatter3D(pts_random[:,0], pts_random[:,1], pts_random[:,2], c=torch.linalg.norm(pc.detach().cpu(),dim=1), cmap="hot")
-# plt.show()
-
-# N=10000
-# plt.figure(figsize = (40, 40))
-# ax = plt.axes(projection ="3d")
-# pc = pc.detach().cpu().numpy()
-# L = [[i+1,i+1+N] for i in range(N)]
-# for i in range(N):
-#     ax.plot3D([pc[i,0],pts_random[i,0]], [pc[i,1],pts_random[i,1]], [pc[i,2],pts_random[i,2]])
-# plt.show()
-# to_obj(np.concatenate([pc[:N], pts_random[:N]]), "D:/gt_proj.obj", lines=L)
-
-# img = sphere_tracing_gpu(lambda x:net(x)[:,3:], 250, 0*np.pi/6, 3*np.pi/6, 1., 3., 1., .02, np.array([.6,.8,.3]))
-# plt.figure(figsize=(10,10))  
-# # plt.imshow(img)
-# plt.imshow(np.rot90(img))

@@ -38,6 +38,26 @@ def from_obj(path):
     f.close()
     return np.array(L)
 
+def from_ply(path):
+    f = open(path, "r")
+    # s = f.readline()
+    # while s[:-1] != "end_header":
+    #     s = f.readline()
+    s = f.readline()
+    p, n = [], []
+    while s:
+        t = s.split()
+        p.append(np.array([float(t[0]), float(t[1]), float(t[2])]))
+        n.append(np.array([float(t[3]), float(t[4]), float(t[5])]))
+        s = f.readline()
+    f.close()
+    
+    M = 0
+    for v in p:
+        M = max(M, np.linalg.norm(v, np.inf))
+        
+    return 1/M*np.array(p), np.array(n)
+
 def load_mesh(s, normalize=True):
     m = hmesh.load(s)
 

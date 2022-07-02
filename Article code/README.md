@@ -1,17 +1,3 @@
-# SkeletonLearning
-Learning a skeleton from a shape
-
-Internship from Mattéo Clémot (ENS Lyon) February-July 2022.
-
-## papers to read
-
-- SIREN 
-  - https://www.vincentsitzmann.com/siren/
-  - https://arxiv.org/abs/2006.09661
-  - https://arxiv.org/pdf/2106.07689.pdf -> nouvelle loss pour les NI (2021) lien avec sol. de viscosité
-
-## Code (+ instructions to compile)
-
 # Usage
 
 usage: main.py [-h] [-pretrain PRE PRE] [-i INPUT] [-mshsmp MSHSMP] [-prenet PRENET] [-lr LR] [-epochs EPOCHS] [-bs BS] [-numlpts NUMLPTS] [-cutlpts CUTLPTS] [-nsk NSK] [-steps STEPS] [-radius RADIUS] [-alpha ALPHA] -o OUTPUT

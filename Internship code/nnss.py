@@ -5,11 +5,8 @@ from torch import nn
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
-from sklearn.decomposition import PCA
-import os
-import random
 
-from nn import Sine, SirenLayer, sdf_loss_point_cloud, sdf_loss_others, sdf_loss_hints_old, dist_to_pc
+from nn import SirenLayer, sdf_loss_point_cloud, sdf_loss_others, sdf_loss_hints_old, dist_to_pc
 from geometry import load_mesh, from_ply, to_obj, sample_mesh
 from tools import gradient
 from display import display_sdfColor, display_grad

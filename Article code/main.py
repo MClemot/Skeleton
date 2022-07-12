@@ -118,7 +118,7 @@ if args.input != None:
         net = torch.load(args.input)
     else:
         if args.input[-3:] == 'obj':
-            pc, nc = sample_mesh(args.input, args.meshsampling)
+            pc, nc = sample_mesh(args.input, args.mshsmp)
         elif args.input[-3:] == 'ply':
             pc, nc = from_ply(args.input)
             pc, nc = torch.tensor(pc, device=device).float(), torch.tensor(nc, device=device).float()

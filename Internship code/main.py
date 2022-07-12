@@ -70,7 +70,7 @@ sk = find_skeleton_gpu(net, -1, 10000, 50, .5, 1, 100, s, resampling = False)
 
 
 # =============================================================================
-# skeletal points extraction (line-search)
+# skeletal points extraction (energy minimization)
 # =============================================================================
 
 sk_energy = find_skeleton_elasticity(net, 250, 1e3, 3e0, 0e3, 0.02)

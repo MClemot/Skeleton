@@ -1,3 +1,6 @@
+# Dependencies
+argparse, gudhi, matplotlib, pygel3d, pytorch, scipy, tqdm
+
 # Usage
 
 usage: main.py [-h] [-pretrain PRE PRE] [-i INPUT] [-mshsmp MSHSMP] [-prenet PRENET] [-lr LR] [-epochs EPOCHS] [-bs BS] [-numlpts NUMLPTS] [-cutlpts CUTLPTS] [-nsk NSK] [-steps STEPS] [-radius RADIUS] [-alpha ALPHA] -o OUTPUT
